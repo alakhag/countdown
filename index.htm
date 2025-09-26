@@ -49,6 +49,7 @@
       </div>
 
       <div class="controls">
+        <button id="reset" class="primary" title="Start fresh with 831600s / 13860m / 231h">Reset to 9 days 15 hours 60 minutes</button>
         <input id="endInput" type="datetime-local" title="Pick a custom end time (local timezone)" />
         <button id="apply">Set custom end</button>
         <span class="pill">End: <span id="endText">not set</span></span>
@@ -63,9 +64,11 @@
   <script>
     // Defaults from your spec
     const DEFAULT_SECONDS = 831600;      // every second
-    const DEFAULT_MINUTES = 13860;       // every minute
-    const DEFAULT_HOURS   = 231;         // every hour
-    // All three equate to the same end time. Use seconds as canonical.
+const DEFAULT_MINUTES = 13860;       // every minute
+const DEFAULT_HOURS   = 231;         // every hour
+// All three equate to the same end time. Use seconds as canonical.
+// Default end target (local time). Adjust as needed.
+const DEFAULT_END_LOCAL = new Date('2025-10-06T04:30:00');
 
     const qs = new URLSearchParams(location.search);
     const secEl = document.getElementById('sec');
@@ -93,14 +96,19 @@
     }
 
     function initEndFromUrlOrDefault(){
-      const endParam = qs.get('end');
-      if(endParam){
-        const t = Date.parse(endParam);
-        if(!Number.isNaN(t)){
-          endMs = t;
-          syncUrl(endMs);
-          return;
-        }
+  const endParam = qs.get('end');
+  if(endParam){
+    const t = Date.parse(endParam);
+    if(!Number.isNaN(t)){
+      endMs = t;
+      syncUrl(endMs);
+      return;
+    }
+  }
+  // Fallback to the requested fixed default time (local timezone)
+  endMs = DEFAULT_END_LOCAL.getTime();
+  syncUrl(endMs);
+}
       }
       // No valid end provided. Initialize to now + DEFAULT_SECONDS.
       endMs = Date.now() + DEFAULT_SECONDS*1000;
@@ -170,28 +178,30 @@
     }
 
     // Controls
-    document.getElementById('reset').addEventListener('click', () => {
-      endMs = Date.now() + DEFAULT_SECONDS*1000; // 831600 s
-      syncUrl(endMs);
-      document.title = 'Triple Countdown';
-      startTimers();
-    });
+const resetBtn = document.getElementById('reset');
+if (resetBtn) {
+  resetBtn.addEventListener('click', () => {
+    endMs = DEFAULT_END_LOCAL.getTime();
+    syncUrl(endMs);
+    document.title = 'Triple Countdown';
+    startTimers();
+  });
+}
 
-    document.getElementById('apply').addEventListener('click', () => {
-      if(!endInput.value) return;
-      const local = new Date(endInput.value); // treated as local time
-      const utcMs = local.getTime();
-      if(Number.isNaN(utcMs)) return;
-      endMs = utcMs;
-      syncUrl(endMs);
-      document.title = 'Triple Countdown';
-      startTimers();
-    });
+document.getElementById('apply').addEventListener('click', () => {
+  if(!endInput.value) return;
+  const local = new Date(endInput.value); // treated as local time
+  const utcMs = local.getTime();
+  if(Number.isNaN(utcMs)) return;
+  endMs = utcMs;
+  syncUrl(endMs);
+  document.title = 'Triple Countdown';
+  startTimers();
+});
 
-    // Kickoff
+// Kickoff
     initEndFromUrlOrDefault();
     startTimers();
   </script>
 </body>
 </html>
-
